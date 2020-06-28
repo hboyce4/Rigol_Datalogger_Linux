@@ -1,0 +1,24 @@
+# depslib dependency file v1.0
+1593361832 source:/home/hboyce4/Documents/Rigol_Scope/Test_app_1/Rigol_test/main.c
+	<stdio.h>
+	<errno.h>
+	<fcntl.h>
+	<stdlib.h>
+	<unistd.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<readline/readline.h>
+	<readline/history.h>
+	"connection.h"
+
+1423075376 /home/hboyce4/Documents/Rigol_Scope/Test_app_1/Rigol_test/connection.h
+
+1423075376 source:/home/hboyce4/Documents/Rigol_Scope/Test_app_1/Rigol_test/connection.c
+	<fcntl.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<unistd.h>
+	<linux/usb/tmc.h>
+	"connection.h"
+

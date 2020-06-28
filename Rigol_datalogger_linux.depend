@@ -1,0 +1,24 @@
+# depslib dependency file v1.0
+1423075376 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/connection.c
+	<fcntl.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<unistd.h>
+	<linux/usb/tmc.h>
+	"connection.h"
+
+1423075376 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/connection.h
+
+1593363334 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.c
+	<stdio.h>
+	<errno.h>
+	<fcntl.h>
+	<stdlib.h>
+	<unistd.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<readline/readline.h>
+	<readline/history.h>
+	"connection.h"
+

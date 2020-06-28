@@ -1,0 +1,35 @@
+Copy pasted from: http://falsecolour.com/aw/computer/udev-usbtmc/index.html
+
+Many thanks to awebster!!!
+
+
+To make sure the usbtmc devices have lax permissions, I do the following.
+
+First, I create a group called “usbtmc” and add myself to the group
+
+groupadd usbtmc
+gpasswd -a awebster usbtmc
+
+Log out and log in again to get the permissions set correctly.
+
+Next, you’ll have to edit some udev rules in /lib/udev/rules.d/51-usbtmc.rules. On Debian systems this should be put in /etc/udev/rules.d/51-usbtmc.rules.
+
+and add the following line to one of these files
+
+# this is the general rule that covers usbtmc devices
+KERNEL=="usbtmc/*", MODE="0666", GROUP="usbtmc"
+KERNEL=="usbtmc[0-9]", MODE="0666", GROUP="usbtmc"
+
+This will make it such that every time there’s a /dev/usbtmc[0-9] device, it will belong to the group usbtmc and have 0666 permissions.
+
+On Debian you have to reload the rules:
+
+udevadm control --reload-rules
+udevadm trigger
+
+Unplug and re-plug the device.  Verify that it works
+
+ls -la /dev/usbtmc0
+crw-rw-rw- 1 root usbtmc 180, 0 May  5 13:09 /dev/usbtmc0
+
+You should have free reign to the device now.

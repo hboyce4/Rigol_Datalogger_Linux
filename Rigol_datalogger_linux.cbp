@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Rigol_datalogger_linux" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/Rigol_datalogger_linux" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-Wshadow" />
+					<Add option="-lreadline" />
+					<Add option="-ltinfo" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.a" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8.0" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.a" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6.2" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/Rigol_datalogger_linux" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-Wshadow" />
+					<Add option="-Wredundant-decls" />
+					<Add option="-Wcast-align" />
+					<Add option="-Wfloat-equal" />
+					<Add option="-Wunreachable-code" />
+					<Add option="-Wswitch-enum" />
+					<Add option="-Wswitch-default" />
+					<Add option="-Wmain" />
+					<Add option="-lreadline" />
+					<Add option="-ltinfo" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.a" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8.0" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.a" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6" />
+					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6.2" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-lreadline" />
+			<Add option="-ltinfo" />
+		</Compiler>
+		<Linker>
+			<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.a" />
+			<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so" />
+			<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6" />
+			<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6.2" />
+			<Add library="/usr/lib/x86_64-linux-gnu/libreadline.a" />
+			<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so" />
+			<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8" />
+			<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8.0" />
+		</Linker>
+		<Unit filename="connection.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="connection.h" />
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>
