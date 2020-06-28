@@ -47,21 +47,20 @@
 
 #include "connection.h"
 
-#define WRITE_BUFF_LEN 512
+#define STRING_BUFF_LEN 512
 #define NUMBER_OF_CHANNELS 4
-#define SAMPLE_PERIOD_SEC 3
-#define DATAPOINTS_TO_ACQUIRE 10
 
 
 int main(int argc, char **argv)
 {
-	char device[256] = "/dev/usbtmc0";
+
+    /*Initiate connection */
+	char device[STRING_BUFF_LEN] = "/dev/usbtmc0";
 	if (argc > 2 && strncmp(argv[1], "-D", 2) == 0) {
 		strcpy(device, argv[2]);
 		argc -= 2;
 		*argv += 2;
 	}
-
 	struct connection con;// con is the handle for the connection I guess
 	con_open(&con, device);
 	if (con.fd < 0) {
@@ -70,18 +69,22 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	//enter_console(&con);
 
-    //cmd_send_direct(con, "*IDN?");
 
     uint8_t i;
-    char temp_string[WRITE_BUFF_LEN];
+    char temp_string[STRING_BUFF_LEN];
 
-
+    /*Prompt user for sample interval and number of samples*/
+    int32_t sample_interval_sec, datapoints_to_acquire;
+    printf("Please enter the desired number of samples:\n");
+    prompt_for_number(&datapoints_to_acquire);
+    printf("Please enter the desired sample interval in seconds:\n");
+    prompt_for_number(&sample_interval_sec);
+    printf("The program will print %ld points at %ld seconds interval.",datapoints_to_acquire,sample_interval_sec);
 
      /* Turning ON all channels and setting trigger to AUTO*/
     for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
-        snprintf(temp_string, WRITE_BUFF_LEN, ":CHANnel%d:DISPlay 1", i);
+        snprintf(temp_string, STRING_BUFF_LEN, ":CHANnel%d:DISPlay 1", i);
         con_send(&con, temp_string);
     }
     con_send(&con,":TRIGger:SWEep AUTO");
@@ -98,7 +101,7 @@ int main(int argc, char **argv)
     printf("seconds,");
 
     for (i = 1;i <= NUMBER_OF_CHANNELS;i++) {
-        snprintf(temp_string, WRITE_BUFF_LEN, ":CHAN%d:UNIT?", i);
+        snprintf(temp_string, STRING_BUFF_LEN, ":CHAN%d:UNIT?", i);
 
         con_send(&con, temp_string);
         con_recv(&con);
@@ -117,7 +120,7 @@ int main(int argc, char **argv)
     /*Query and print probe ratio*/
     printf("1X,");
     for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
-        snprintf(temp_string, WRITE_BUFF_LEN, ":CHAN%d:PROBe?", i);
+        snprintf(temp_string, STRING_BUFF_LEN, ":CHAN%d:PROBe?", i);
 
         con_send(&con, temp_string);
         con_recv(&con);
@@ -135,13 +138,13 @@ int main(int argc, char **argv)
      time(&time_current);
      time_t time_last_sample = 0;
 
-     int32_t datapoints_left_to_acquire = DATAPOINTS_TO_ACQUIRE;
+     int32_t datapoints_left_to_acquire = datapoints_to_acquire;
 
 
      while (datapoints_left_to_acquire > 0) {
          datapoints_left_to_acquire--;
 
-         while (!(time_current >= (time_last_sample + SAMPLE_PERIOD_SEC))) { /*While the time to get a new sample hasn't arrived yet*/
+         while (!(time_current >= (time_last_sample + sample_interval_sec))) { /*While the time to get a new sample hasn't arrived yet*/
              time(&time_current); /* Check the time continuously*/
          }
          time_last_sample = time_current;
@@ -153,7 +156,7 @@ int main(int argc, char **argv)
          printf(",");
          for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
 
-             snprintf(temp_string, WRITE_BUFF_LEN, ":MEAS:ITEM? VAVG,CHAN%d", i);
+             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? VAVG,CHAN%d", i);
              con_send(&con, temp_string);
              con_recv(&con);
              printf("%.*s", (strlen(con.buffer)- 1), con.buffer); /*Use of strlen-1 to truncate the \n at the end of the data received from the scope*/
@@ -165,7 +168,7 @@ int main(int argc, char **argv)
          }
          printf("\n");
 
-         sleep(SAMPLE_PERIOD_SEC-1); /*Sleep for a little less than the sample period*/
+         sleep(sample_interval_sec-1); /*Sleep for a little less than the sample period*/
      }
 
 
@@ -174,140 +177,55 @@ int main(int argc, char **argv)
 
 }
 
-/*
 
-// HELPERS
+int32_t prompt_for_number(int32_t* number){
 
-void print_data(const char *buf, size_t count)
-{
-	int i;
-	for (i = 0; i < count; i++) {
-		if (i % 16 == 0)
-			printf("%08x  ", i);
-		printf("%02x ", buf[i]);
-		if (i % 16 == 7)
-			printf(" ");
-		if (i % 16 == 15)
-			printf("\n");
-	}
-	if (i % 16 != 0)
-		printf("\n");
+
+    /*Copied from: http://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html */
+    /* Thank you Felix Palmen*/
+
+    char buf[STRING_BUFF_LEN]; // use 1KiB just to be sure
+    int success; // flag for successful conversion
+
+    do
+    {
+
+        if (!fgets(buf, STRING_BUFF_LEN, stdin))
+        {
+            // reading input failed:
+            return 1;
+        }
+
+        // have some input, convert it to integer:
+        char *endptr;
+
+        errno = 0; // reset error number
+        *number = strtol(buf, &endptr, 10);
+        if (errno == ERANGE)
+        {
+            printf("Sorry, this number is too small or too large.\n");
+            success = 0;
+        }
+        else if (endptr == buf)
+        {
+            // no character was read
+            success = 0;
+        }
+        else if (*number < 0)
+        {
+            printf("Sorry, this number is negative.\n");
+            success = 0;
+        }
+        else if (*endptr && *endptr != '\n')
+        {
+            // *endptr is neither end of string nor newline,
+            // so we didn't convert the *whole* input
+            success = 0;
+        }
+        else
+        {
+            success = 1;
+        }
+    } while (!success); // repeat until we got a valid number
+
 }
-
-int write_to_file(const char *filename, const char *buf, size_t count)
-{
-	int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-	if (fd < 0) {
-		fprintf(stderr, "Could not open file '%s': %s\n", filename,
-				strerror(errno));
-		return -1;
-	}
-	if (count != write(fd, buf, count))
-		fprintf(stderr, "Could not write to file '%s': %s\n", filename,
-				strerror(errno));
-	if (close(fd))
-		fprintf(stderr, "Could not close file '%s': %s\n", filename,
-				strerror(errno));
-	return count;
-}
-
-char *trim_lead_space(char *str)
-{
-	char *res = str;
-	while (res[0] != 0 && isspace(res[0]))
-		res++;
-	return res;
-}
-
-void strip_trail_space(char *str)
-{
-	int len = strlen(str);
-	while(len > 0 && isspace(str[len - 1]))
-		len--;
-	str[len] = 0;
-}
-
-int starts_with_word(char *str, char *word)
-{
-	int len = strlen(word);
-	if (strncmp(str, word, len) != 0)
-		return 0;
-	return str[len] == 0 || isspace(str[len]);
-}
-
-// COMMANDS
-
-void cmd_print(const struct connection *con)
-{
-	if (con->data_size > 0)
-		print_data(con->buffer + 10, con->data_size);
-}
-
-void cmd_save(const struct connection *con, const char *filename)
-{
-	if (con->data_size <= 0) {
-		printf("no data to save\n");
-		return;
-	}
-	int count = write_to_file(filename, con->buffer + 10, con->data_size);
-	if (count > 0)
-		printf("saved %i bytes to %s\n", count, filename);
-}
-
-void _cmd_receive_response(struct connection *con)
-{
-	int size = con_recv(con);
-	if (size <= 0)
-		return;
-	if (con->data_size >= 0)
-		printf("%i bytes of data received\n", con->data_size);
-	else
-		printf("%s\n", con->buffer);
-}
-
-void cmd_send_direct(struct connection *con, const char *cmd)
-{
-	int size = con_send(con, cmd);
-	if (size <= 0)
-		return;
-	if (strchr(cmd, '?') != NULL) {
-		_cmd_receive_response(con);
-	}
-}
-
-// INTERACTIVE CONSOLE
-
-void process_cmd(struct connection *con, char *cmd)
-{
-	if (starts_with_word(cmd, "print"))
-		cmd_print(con);
-	else if (starts_with_word(cmd, "save"))
-		cmd_save(con, trim_lead_space(cmd + 4));
-	else if (cmd[0] == ':' || cmd[0] == '*')
-		cmd_send_direct(con, cmd);
-	else
-		printf("unknown command\n");
-}
-
-void enter_console(struct connection *con)
-{
-	char *cmd;
-	// readline
-	rl_instream = stdin;
-	rl_outstream = stderr;
-
-	cmd_send_direct(con, "*IDN?");
-	while (1) {
-		cmd = readline("rigol> ");
-		if (!cmd)
-			break;
-		cmd = trim_lead_space(cmd);
-		strip_trail_space(cmd);
-		if (strlen(cmd) == 0)
-			continue;
-		process_cmd(con, cmd);
-		add_history(cmd);
-	}
-	printf("\n");
-}
-*/
