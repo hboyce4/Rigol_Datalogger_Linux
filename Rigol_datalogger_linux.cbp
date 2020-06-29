@@ -17,16 +17,6 @@
 					<Add option="-ltinfo" />
 					<Add option="-g" />
 				</Compiler>
-				<Linker>
-					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.a" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8.0" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.a" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6.2" />
-				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/Rigol_datalogger_linux" prefix_auto="1" extension_auto="1" />
@@ -48,32 +38,12 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.a" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8.0" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.a" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6" />
-					<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6.2" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-lreadline" />
-			<Add option="-ltinfo" />
 		</Compiler>
-		<Linker>
-			<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.a" />
-			<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so" />
-			<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6" />
-			<Add library="/usr/lib/x86_64-linux-gnu/libtinfo.so.6.2" />
-			<Add library="/usr/lib/x86_64-linux-gnu/libreadline.a" />
-			<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so" />
-			<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8" />
-			<Add library="/usr/lib/x86_64-linux-gnu/libreadline.so.8.0" />
-		</Linker>
 		<Unit filename="connection.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -1,18 +1,15 @@
 /**
- * rigol.c - a simple terminal program to control Rigol DS1000 series scopes
+ * Rigol_Datalogger_Linux, Copyright (C) 2020 Hugo Boyce
  *
+ *
+ * Based on rigol.c - a simple terminal program to control Rigol DS1000 series scopes,
+ * Originally by:
  * Copyright (C) 2010 Mark Whitis
  * Copyright (C) 2012 Jiri Pittner <jiri@pittnerovi.com>
  * Copyright (C) 2013 Ralf Sternberg <ralfstx@gmail.com>
+ * Many thanks to them!!!
  *
- * Improvements by Jiri Pittner:
- *   readline with history, avoiding timeouts, unlock scope at CTRL-D,
- *   read large sample memory, specify device at the command line
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,8 +21,8 @@
  */
 
 
- /* If you get something like usbtmc0: Permission denied, you have to enable a thing called "udev permissions" on your user account as per
- http://falsecolour.com/aw/computer/udev-usbtmc/index.html. Or see howto_udev_permissions.txt */
+ /* If you get something like "usbtmc0: Permission denied", you have to enable a thing called "udev permissions" on your user account as per
+ http://falsecolour.com/aw/computer/udev-usbtmc/index.html. Or see howto_udev_permissions.txt. Many thanks to awebster.*/
 
 
 #include <stdio.h>
@@ -70,6 +67,11 @@ int main(int argc, char **argv)
 
     uint8_t i;
     char temp_string[STRING_BUFF_LEN];
+
+    con_send(&con,"*IDN?");
+    con_recv(&con);
+    printf("Scope found over USB: %s\n",con.buffer);
+
 
     /*Prompt user for sample interval and number of samples*/
     int32_t sample_interval_sec, datapoints_to_acquire;
@@ -132,7 +134,7 @@ int main(int argc, char **argv)
 
     double temp_float = 0;
 
-    /*Query and print probe ratio*/
+    /*Query and print probe ratios*/
     fprintf(fptr,"1X,");
     for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
         snprintf(temp_string, STRING_BUFF_LEN, ":CHAN%d:PROBe?", i);
@@ -161,7 +163,7 @@ int main(int argc, char **argv)
      int32_t datapoints_acquired = 0;
 
 
-     while (datapoints_acquired < datapoints_to_acquire) {
+     while (datapoints_acquired < datapoints_to_acquire) { /* Main loop that acquires all the points*/
          datapoints_acquired++;
 
         while (!(time_current >= (time_last_sample + sample_interval_sec))) { /*While the time to get a new sample hasn't arrived yet*/
@@ -170,13 +172,13 @@ int main(int argc, char **argv)
         time_last_sample = time_current;
 
             /*Once the time for a new sample has arrived...*/
-            /*Print one data point (time plus all channels)*/
+            /*Append one new data point(time plus all channels) to the file*/
         fptr = fopen(filename, "a");
         fprintf(fptr,"%ld", time_current); /*Print the time. %ld to print long decimal*/
         fprintf(fptr,",");
         for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
 
-             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? VAVG,CHAN%d", i);
+             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? VAVG,CHAN%d", i);/*Query the average voltage to the scope. Change this command as per the Rigol programming manual to query a different measurement */
              con_send(&con, temp_string);
              con_recv(&con);
              fprintf(fptr,"%.*s", (strlen(con.buffer)- 1), con.buffer); /*Use of strlen-1 to truncate the \n at the end of the data received from the scope*/
@@ -189,6 +191,7 @@ int main(int argc, char **argv)
         fprintf(fptr,"\n");
         fclose(fptr);
 
+        /* Print the progress status in the terminal*/
         printf("\r");
         printf("%ld/%ld ",datapoints_acquired, datapoints_to_acquire);
         fflush(stdout); /* Printf prints nothing if sleep is called right after. Use fflush to prevent that.*/
