@@ -40,12 +40,14 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <inttypes.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
 #include "connection.h"
+#include "main.h"
 
 #define STRING_BUFF_LEN 512
 #define NUMBER_OF_CHANNELS 4
@@ -80,7 +82,13 @@ int main(int argc, char **argv)
     prompt_for_number(&datapoints_to_acquire);
     printf("Please enter the desired sample interval in seconds:\n");
     prompt_for_number(&sample_interval_sec);
-    printf("The program will print %ld points at %ld seconds interval.",datapoints_to_acquire,sample_interval_sec);
+    printf("The program will print ");
+    printf("%" PRId32,datapoints_to_acquire);
+    printf(" points at ");
+    printf("%" PRId32, sample_interval_sec);
+    printf(" seconds interval.\n");
+
+
 
      /* Turning ON all channels and setting trigger to AUTO*/
     for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
@@ -90,49 +98,66 @@ int main(int argc, char **argv)
     con_send(&con,":TRIGger:SWEep AUTO");
     sleep(3);    /* Wait a bit to acquire some waveforms */
 
+    /* Generate the filename*/
+    char filename[STRING_BUFF_LEN];
+    generate_filename(filename);
+
+
+    /* Create the file and open it in write mode*/
+    FILE* fptr;
+    fptr = fopen(filename, "w");
+    if (fptr == NULL) {/* If null pointer is returned by fopen because it could not open the file*/
+        printf("Error!");
+        exit(1);
+    }
+
+    printf("Writing file header...\n");
 
 
      /* Print a list of the channels */
-    printf("\n");
-    printf("time,CH1,CH2,CH3,CH4\n");
+    fprintf(fptr,"time,CH1,CH2,CH3,CH4\n");
 
 
     /*Query and print units*/
-    printf("seconds,");
+   fprintf(fptr,"seconds,");
 
     for (i = 1;i <= NUMBER_OF_CHANNELS;i++) {
         snprintf(temp_string, STRING_BUFF_LEN, ":CHAN%d:UNIT?", i);
 
         con_send(&con, temp_string);
         con_recv(&con);
-        printf("%.*s", (strlen(con.buffer) - 1), con.buffer);
+        fprintf(fptr,"%.*s", (strlen(con.buffer) - 1), con.buffer);
         if (i < NUMBER_OF_CHANNELS) {
-            printf(",");
+            fprintf(fptr,",");
         }
 
     }
-    printf("\n");
-
+    fprintf(fptr,"\n");
 
 
     double temp_float = 0;
 
     /*Query and print probe ratio*/
-    printf("1X,");
+    fprintf(fptr,"1X,");
     for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
         snprintf(temp_string, STRING_BUFF_LEN, ":CHAN%d:PROBe?", i);
 
         con_send(&con, temp_string);
         con_recv(&con);
         sscanf((const char*)con.buffer, "%lf", &temp_float);
-        printf("%gX", temp_float);
+        fprintf(fptr,"%gX", temp_float);
         if (i < NUMBER_OF_CHANNELS) {
-            printf(",");
+            fprintf(fptr,",");
         }
 
     }
-    printf("\n");
+    fprintf(fptr,"\n");
+    fclose(fptr);
 
+
+
+
+    printf("Starting acquisition...\n");
 
      time_t time_current;
      time(&time_current);
@@ -144,34 +169,38 @@ int main(int argc, char **argv)
      while (datapoints_left_to_acquire > 0) {
          datapoints_left_to_acquire--;
 
-         while (!(time_current >= (time_last_sample + sample_interval_sec))) { /*While the time to get a new sample hasn't arrived yet*/
-             time(&time_current); /* Check the time continuously*/
-         }
-         time_last_sample = time_current;
+        while (!(time_current >= (time_last_sample + sample_interval_sec))) { /*While the time to get a new sample hasn't arrived yet*/
+           time(&time_current); /* Check the time continuously*/
+        }
+        time_last_sample = time_current;
 
             /*Once the time for a new sample has arrived...*/
             /*Print one data point (time plus all channels)*/
-
-         printf("%ld", time_current); /*Print the time. %ld to print long decimal*/
-         printf(",");
-         for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
+        fptr = fopen(filename, "a");
+        fprintf(fptr,"%ld", time_current); /*Print the time. %ld to print long decimal*/
+        fprintf(fptr,",");
+        for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
 
              snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? VAVG,CHAN%d", i);
              con_send(&con, temp_string);
              con_recv(&con);
-             printf("%.*s", (strlen(con.buffer)- 1), con.buffer); /*Use of strlen-1 to truncate the \n at the end of the data received from the scope*/
+             fprintf(fptr,"%.*s", (strlen(con.buffer)- 1), con.buffer); /*Use of strlen-1 to truncate the \n at the end of the data received from the scope*/
 
              if (i < NUMBER_OF_CHANNELS) {
-                 printf(",");
+                 fprintf(fptr,",");
              }
 
-         }
-         printf("\n");
+        }
+        fprintf(fptr,"\n");
+        fclose(fptr);
+
 
          sleep(sample_interval_sec-1); /*Sleep for a little less than the sample period*/
-     }
+        }
 
 
+
+    printf("Acquisition finished...\n");
 	con_close(&con);
 	exit(EXIT_SUCCESS);
 
@@ -185,7 +214,7 @@ int32_t prompt_for_number(int32_t* number){
     /* Thank you Felix Palmen*/
 
     char buf[STRING_BUFF_LEN]; // use 1KiB just to be sure
-    int success; // flag for successful conversion
+    int32_t success; // flag for successful conversion
 
     do
     {
@@ -227,5 +256,27 @@ int32_t prompt_for_number(int32_t* number){
             success = 1;
         }
     } while (!success); // repeat until we got a valid number
+
+    return 0;
+}
+
+void generate_filename(char * filename){
+
+    time_t rawtime = time(NULL);
+
+    if (rawtime == -1) {
+
+        puts("The time() function failed");
+
+    }
+
+    struct tm *ptm = localtime(&rawtime);
+
+    if (ptm == NULL) {
+
+        puts("The localtime() function failed");
+    }
+
+    sprintf(filename,"Scope Capture %04d-%02d-%02d %02d:%02d:%02d.csv", ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
 
 }

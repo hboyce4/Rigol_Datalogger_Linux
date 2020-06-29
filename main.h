@@ -6,3 +6,4 @@
 #endif // MAIN_H_INCLUDED
 
 int32_t prompt_for_number(int32_t*);
+void generate_filename(char*);

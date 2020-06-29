@@ -10,15 +10,20 @@
 
 1423075376 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/connection.h
 
-1593363334 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.c
+1593383599 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.c
 	<stdio.h>
 	<errno.h>
 	<fcntl.h>
 	<stdlib.h>
 	<unistd.h>
+	<stdint.h>
 	<sys/types.h>
 	<sys/stat.h>
+	<time.h>
 	<readline/readline.h>
 	<readline/history.h>
 	"connection.h"
+	"main.h"
+
+1593383121 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.h
 
