@@ -24,11 +24,6 @@
  */
 
 
- /* You have to have a program/library called readline installed for this program to work. Then, in the build options, add the -lreadline compiler flag.
- Then, add the readline library to the linker. the libraries are the libreadline.a, libreadline.so , as well as any other file called libreadline in /usr/lib/x86_64-linux-gnu/ */
-
- /* On my machine I also needed a library called tinfo. Same procedure as readline*/
-
  /* If you get something like usbtmc0: Permission denied, you have to enable a thing called "udev permissions" on your user account as per
  http://falsecolour.com/aw/computer/udev-usbtmc/index.html. Or see howto_udev_permissions.txt */
 
@@ -82,7 +77,7 @@ int main(int argc, char **argv)
     prompt_for_number(&datapoints_to_acquire);
     printf("Please enter the desired sample interval in seconds:\n");
     prompt_for_number(&sample_interval_sec);
-    printf("The program will print ");
+    printf("The program will save ");
     printf("%" PRId32,datapoints_to_acquire);
     printf(" points at ");
     printf("%" PRId32, sample_interval_sec);
@@ -163,11 +158,11 @@ int main(int argc, char **argv)
      time(&time_current);
      time_t time_last_sample = 0;
 
-     int32_t datapoints_left_to_acquire = datapoints_to_acquire;
+     int32_t datapoints_acquired = 0;
 
 
-     while (datapoints_left_to_acquire > 0) {
-         datapoints_left_to_acquire--;
+     while (datapoints_acquired < datapoints_to_acquire) {
+         datapoints_acquired++;
 
         while (!(time_current >= (time_last_sample + sample_interval_sec))) { /*While the time to get a new sample hasn't arrived yet*/
            time(&time_current); /* Check the time continuously*/
@@ -194,11 +189,14 @@ int main(int argc, char **argv)
         fprintf(fptr,"\n");
         fclose(fptr);
 
+        printf("\r");
+        printf("%ld/%ld ",datapoints_acquired, datapoints_to_acquire);
+        fflush(stdout); /* Printf prints nothing if sleep is called right after. Use fflush to prevent that.*/
+
 
          sleep(sample_interval_sec-1); /*Sleep for a little less than the sample period*/
-        }
-
-
+    }
+    printf("\n");
 
     printf("Acquisition finished...\n");
 	con_close(&con);
