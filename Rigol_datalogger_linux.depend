@@ -10,7 +10,7 @@
 
 1423075376 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/connection.h
 
-1593395355 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.c
+1620865840 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.c
 	<stdio.h>
 	<errno.h>
 	<fcntl.h>
@@ -26,5 +26,5 @@
 	"connection.h"
 	"main.h"
 
-1593385976 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.h
+1620864025 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.h
 

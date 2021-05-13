@@ -1,0 +1,10 @@
+HOW TO RUN:
+
+	1.  Right-click in folder and select "Open in Terminal"
+	
+	OR
+	
+	CTRL+ALT+T then cd to the directory (harder)
+	
+	2. type in terminal " ./Rigol_datalogger_linux" then press
+	ENTER

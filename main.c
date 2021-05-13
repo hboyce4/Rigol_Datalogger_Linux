@@ -73,19 +73,20 @@ int main(int argc, char **argv)
     printf("Scope found over USB: %s\n",con.buffer);
 
 
-    /*Prompt user for sample interval and number of samples*/
+    /*Prompt user for sample interval, number of samples and measurement type*/
     int32_t sample_interval_sec, datapoints_to_acquire;
+    char str_measurement_type[STRING_BUFF_LEN];
     printf("Please enter the desired number of samples:\n");
     prompt_for_number(&datapoints_to_acquire);
     printf("Please enter the desired sample interval in seconds:\n");
     prompt_for_number(&sample_interval_sec);
+    select_measurement_type(&str_measurement_type);
+
     printf("The program will save ");
     printf("%" PRId32,datapoints_to_acquire);
     printf(" points at ");
     printf("%" PRId32, sample_interval_sec);
-    printf(" seconds interval.\n");
-
-
+    printf(" seconds interval of %s\n", str_measurement_type);
 
      /* Turning ON all channels and setting trigger to AUTO*/
     for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
@@ -104,7 +105,7 @@ int main(int argc, char **argv)
     FILE* fptr;
     fptr = fopen(filename, "w");
     if (fptr == NULL) {/* If null pointer is returned by fopen because it could not open the file*/
-        printf("Error!");
+        printf("Error! Could not open file.");
         exit(1);
     }
 
@@ -178,7 +179,8 @@ int main(int argc, char **argv)
         fprintf(fptr,",");
         for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
 
-             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? VAVG,CHAN%d", i);/*Query the average voltage to the scope. Change this command as per the Rigol programming manual to query a different measurement */
+             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", str_measurement_type, i);/*Query the measurement to the scope. str_measurement_type contains the meas. type as per the Rigol programming manual */
+             //printf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", str_measurement_type, i);// For DEBUG
              con_send(&con, temp_string);
              con_recv(&con);
              fprintf(fptr,"%.*s", (strlen(con.buffer)- 1), con.buffer); /*Use of strlen-1 to truncate the \n at the end of the data received from the scope*/
@@ -280,4 +282,43 @@ void generate_filename(char * filename){
 
     sprintf(filename,"Scope Capture %04d-%02d-%02d %02d:%02d:%02d.csv", ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
 
+}
+
+void select_measurement_type(char* str_measurement_type){
+
+    uint32_t measurement_type;
+    printf("Please enter the measurement type number:\n");
+    printf("1. Average value\n");
+    printf("2. RMS value\n");
+    printf("3. Pk-pk value\n");
+    printf("4. Frequency\n");
+    printf("5. Pos. duty cycle\n");
+    prompt_for_number(&measurement_type);
+    //printf("Selected number is %d\n", measurement_type);
+    switch (measurement_type){
+
+        case 1 :// If choice no. 1
+            strcpy(str_measurement_type, "VAVG");// Average voltage
+            break;
+
+        case 2 :// If choice no. 2
+            strcpy(str_measurement_type, "VRMS");// RMS voltage
+            break;
+
+        case 3 :// If choice no. 3
+            strcpy(str_measurement_type, "VPP");// Peak to peak voltage
+            break;
+
+        case 4 :// If choice no. 4
+            strcpy(str_measurement_type, "FREQ");// Frequency
+            break;
+
+        case 5 :// If choice no. 5
+            strcpy(str_measurement_type, "PDUT");// Positive duty cycle
+            break;
+
+        default:
+            strcpy(str_measurement_type, "VAVG");// Average voltage
+
+    }
 }
