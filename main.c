@@ -74,18 +74,23 @@ int main(int argc, char **argv)
     /******************************************************************** User prompt start *****************************************************/
     /*Prompt user for sample interval, number of samples and measurement type*/
     int32_t sample_interval_sec, datapoints_to_acquire;
-    measurement_properties_t measurement_type;
+    measurement_t measurements_table[MAX_MEASUREMENTS]; // Maximum number of measurements is 8 (arbitrary, scope can probably take more)
+    uint8_t nb_of_measurements;
+    bool active_channels_table[5]; // Scope is 4 channels + MATH
+
     printf("Please enter the desired number of samples:\n");
     prompt_for_number(&datapoints_to_acquire);
     printf("Please enter the desired sample interval in seconds:\n");
     prompt_for_number(&sample_interval_sec);
+
+    select_measurements(measurements_table, &nb_of_measurements, active_channels_table);
     select_measurement_type(&measurement_type);
 
     printf("The program will save ");
     printf("%" PRId32,datapoints_to_acquire);
     printf(" points at ");
     printf("%" PRId32, sample_interval_sec);
-    printf(" seconds interval of %s\n", measurement_type.human_readable_str);
+    printf(" seconds interval of these measurements:\n");
     /******************************************************************** User prompt end *****************************************************/
 
 
@@ -184,8 +189,8 @@ int main(int argc, char **argv)
         fprintf(fptr,",");
         for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
 
-             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.scope_command_str, i);/*Query the measurement to the scope. str_measurement_type contains the meas. type as per the Rigol programming manual */
-             //printf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.scope_command_str, i);// For DEBUG
+             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.type_scope_command_str, i);/*Query the measurement to the scope. str_measurement_type contains the meas. type as per the Rigol programming manual */
+             //printf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.type_scope_command_str, i);// For DEBUG
              con_send(&con, temp_string);
              con_recv(&con);
              fprintf(fptr,"%.*s", (strlen(con.buffer)- 1), con.buffer); /*Use of strlen-1 to truncate the \n at the end of the data received from the scope*/
@@ -289,10 +294,29 @@ void generate_filename(char * filename){
 
 }
 
-void select_measurement_type(measurement_properties_t* measurement_type){
+void select_measurements(measurement_t* measurements_table, uint8_t* nb_of_measurements, bool* active_channels_table){
+
+    bool selection_is_finished = false;
+    *nb_of_measurements = 0;
+
+    while (!selection_is_finished && (*nb_of_measurements <= MAX_MEASUREMENTS)){
+
+        select_measurement_type(measurements_table, nb_of_measurements, &selection_is_finished);
+
+
+
+
+    }
+
+
+}
+
+
+void select_measurement_type(measurement_t* measurements_table, uint8_t* nb_of_measurements, bool* selection_is_finished){
 
     uint32_t measurement_number;
     printf("Please enter the measurement type number:\n");
+    printf("0. No more measurements\n");
     printf("1. Average value\n");
     printf("2. RMS value\n");
     printf("3. Pk-pk value\n");
@@ -300,42 +324,52 @@ void select_measurement_type(measurement_properties_t* measurement_type){
     printf("5. Pos. duty cycle\n");
     prompt_for_number(&measurement_number);
     //printf("Selected number is %d\n", measurement_type);
-    switch (measurement_number){
 
-        case 1 :// If choice no. 1
-            strcpy(measurement_type->scope_command_str, "VAVG");// Average voltage
-            strcpy(measurement_type->human_readable_str, "Average");
-            measurement_type->is_time_based = false;
-            break;
+    if (measurement_number){
 
-        case 2 :// If choice no. 2
-            strcpy(measurement_type->scope_command_str, "VRMS");// RMS voltage
-            strcpy(measurement_type->human_readable_str, "RMS");
-            measurement_type->is_time_based = false;
-            break;
+        *nb_of_measurements++;// One more measurement has been selected
+        switch (measurement_number){
 
-        case 3 :// If choice no. 3
-            strcpy(measurement_type->scope_command_str, "VPP");// Peak to peak voltage
-            strcpy(measurement_type->human_readable_str, "Pk-pk");
-            measurement_type->is_time_based = false;
-            break;
+            case 1 :// If choice no. 1
+                strcpy(measurement_type->type_scope_command_str, "VAVG");// Average voltage
+                strcpy(measurement_type->human_readable_str, "Average");
+                measurement_type->is_time_based = false;
+                break;
 
-        case 4 :// If choice no. 4
-            strcpy(measurement_type->scope_command_str, "FREQ");// Frequency
-            strcpy(measurement_type->scope_command_str, "Frequency [Hz]");
-            measurement_type->is_time_based = true;
-            break;
+            case 2 :// If choice no. 2
+                strcpy(measurement_type->type_scope_command_str, "VRMS");// RMS voltage
+                strcpy(measurement_type->human_readable_str, "RMS");
+                measurement_type->is_time_based = false;
+                break;
 
-        case 5 :// If choice no. 5
-            strcpy(measurement_type->scope_command_str, "PDUT");// Positive duty cycle
-            strcpy(measurement_type->scope_command_str, "Duty cycle [D]");
-            measurement_type->is_time_based = true;
-            break;
+            case 3 :// If choice no. 3
+                strcpy(measurement_type->type_scope_command_str, "VPP");// Peak to peak voltage
+                strcpy(measurement_type->human_readable_str, "Pk-pk");
+                measurement_type->is_time_based = false;
+                break;
 
-        default:
-            strcpy(measurement_type->scope_command_str, "VAVG");// Average voltage
-            strcpy(measurement_type->human_readable_str, "Average");
-            measurement_type->is_time_based = false;
+            case 4 :// If choice no. 4
+                strcpy(measurement_type->type_scope_command_str, "FREQ");// Frequency
+                strcpy(measurement_type->type_scope_command_str, "Frequency [Hz]");
+                measurement_type->is_time_based = true;
+                break;
 
+            case 5 :// If choice no. 5
+                strcpy(measurement_type->type_scope_command_str, "PDUT");// Positive duty cycle
+                strcpy(measurement_type->type_scope_command_str, "Duty cycle [D]");
+                measurement_type->is_time_based = true;
+                break;
+
+            default:
+                strcpy(measurement_type->type_scope_command_str, "VAVG");// Average voltage
+                strcpy(measurement_type->human_readable_str, "Average");
+                measurement_type->is_time_based = false;
+
+        }
     }
+
+}else{
+
+    *selection_is_finished = true;
 }
+
