@@ -41,14 +41,11 @@
 #include "connection.h"
 #include "main.h"
 
-#define STRING_BUFF_LEN 512
-#define NUMBER_OF_CHANNELS 4
-
 
 int main(int argc, char **argv)
 {
 
-    /*Initiate connection */
+    /********************************************************************Initiate connection  start *****************************************************/
 	char device[STRING_BUFF_LEN] = "/dev/usbtmc0";
 	if (argc > 2 && strncmp(argv[1], "-D", 2) == 0) {
 		strcpy(device, argv[2]);
@@ -71,23 +68,28 @@ int main(int argc, char **argv)
     con_send(&con,"*IDN?");
     con_recv(&con);
     printf("Scope found over USB: %s\n",con.buffer);
+    /********************************************************************Initiate connection end *****************************************************/
 
 
+    /******************************************************************** User prompt start *****************************************************/
     /*Prompt user for sample interval, number of samples and measurement type*/
     int32_t sample_interval_sec, datapoints_to_acquire;
-    char str_measurement_type[STRING_BUFF_LEN];
+    measurement_properties_t measurement_type;
     printf("Please enter the desired number of samples:\n");
     prompt_for_number(&datapoints_to_acquire);
     printf("Please enter the desired sample interval in seconds:\n");
     prompt_for_number(&sample_interval_sec);
-    select_measurement_type(&str_measurement_type);
+    select_measurement_type(&measurement_type);
 
     printf("The program will save ");
     printf("%" PRId32,datapoints_to_acquire);
     printf(" points at ");
     printf("%" PRId32, sample_interval_sec);
-    printf(" seconds interval of %s\n", str_measurement_type);
+    printf(" seconds interval of %s\n", measurement_type.human_readable_str);
+    /******************************************************************** User prompt end *****************************************************/
 
+
+    /******************************************************************** Scope setup start *****************************************************/
      /* Turning ON all channels and setting trigger to AUTO*/
     for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
         snprintf(temp_string, STRING_BUFF_LEN, ":CHANnel%d:DISPlay 1", i);
@@ -95,7 +97,10 @@ int main(int argc, char **argv)
     }
     con_send(&con,":TRIGger:SWEep AUTO");
     sleep(3);    /* Wait a bit to acquire some waveforms */
+    /******************************************************************** Scope setup end *****************************************************/
 
+
+    /******************************************************************** File initialization start *****************************************************/
     /* Generate the filename*/
     char filename[STRING_BUFF_LEN];
     generate_filename(filename);
@@ -151,10 +156,10 @@ int main(int argc, char **argv)
     }
     fprintf(fptr,"\n");
     fclose(fptr);
+    /******************************************************************** File initialization end *****************************************************/
 
 
-
-
+    /******************************************************************** Acquisition start *****************************************************/
     printf("Starting acquisition...\n");
 
      time_t time_current;
@@ -179,8 +184,8 @@ int main(int argc, char **argv)
         fprintf(fptr,",");
         for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
 
-             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", str_measurement_type, i);/*Query the measurement to the scope. str_measurement_type contains the meas. type as per the Rigol programming manual */
-             //printf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", str_measurement_type, i);// For DEBUG
+             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.scope_command_str, i);/*Query the measurement to the scope. str_measurement_type contains the meas. type as per the Rigol programming manual */
+             //printf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.scope_command_str, i);// For DEBUG
              con_send(&con, temp_string);
              con_recv(&con);
              fprintf(fptr,"%.*s", (strlen(con.buffer)- 1), con.buffer); /*Use of strlen-1 to truncate the \n at the end of the data received from the scope*/
@@ -206,7 +211,7 @@ int main(int argc, char **argv)
     printf("Acquisition finished...\n");
 	con_close(&con);
 	exit(EXIT_SUCCESS);
-
+    /******************************************************************** Acquisition end *****************************************************/
 }
 
 
@@ -284,41 +289,53 @@ void generate_filename(char * filename){
 
 }
 
-void select_measurement_type(char* str_measurement_type){
+void select_measurement_type(measurement_properties_t* measurement_type){
 
-    uint32_t measurement_type;
+    uint32_t measurement_number;
     printf("Please enter the measurement type number:\n");
     printf("1. Average value\n");
     printf("2. RMS value\n");
     printf("3. Pk-pk value\n");
     printf("4. Frequency\n");
     printf("5. Pos. duty cycle\n");
-    prompt_for_number(&measurement_type);
+    prompt_for_number(&measurement_number);
     //printf("Selected number is %d\n", measurement_type);
-    switch (measurement_type){
+    switch (measurement_number){
 
         case 1 :// If choice no. 1
-            strcpy(str_measurement_type, "VAVG");// Average voltage
+            strcpy(measurement_type->scope_command_str, "VAVG");// Average voltage
+            strcpy(measurement_type->human_readable_str, "Average");
+            measurement_type->is_time_based = false;
             break;
 
         case 2 :// If choice no. 2
-            strcpy(str_measurement_type, "VRMS");// RMS voltage
+            strcpy(measurement_type->scope_command_str, "VRMS");// RMS voltage
+            strcpy(measurement_type->human_readable_str, "RMS");
+            measurement_type->is_time_based = false;
             break;
 
         case 3 :// If choice no. 3
-            strcpy(str_measurement_type, "VPP");// Peak to peak voltage
+            strcpy(measurement_type->scope_command_str, "VPP");// Peak to peak voltage
+            strcpy(measurement_type->human_readable_str, "Pk-pk");
+            measurement_type->is_time_based = false;
             break;
 
         case 4 :// If choice no. 4
-            strcpy(str_measurement_type, "FREQ");// Frequency
+            strcpy(measurement_type->scope_command_str, "FREQ");// Frequency
+            strcpy(measurement_type->scope_command_str, "Frequency [Hz]");
+            measurement_type->is_time_based = true;
             break;
 
         case 5 :// If choice no. 5
-            strcpy(str_measurement_type, "PDUT");// Positive duty cycle
+            strcpy(measurement_type->scope_command_str, "PDUT");// Positive duty cycle
+            strcpy(measurement_type->scope_command_str, "Duty cycle [D]");
+            measurement_type->is_time_based = true;
             break;
 
         default:
-            strcpy(str_measurement_type, "VAVG");// Average voltage
+            strcpy(measurement_type->scope_command_str, "VAVG");// Average voltage
+            strcpy(measurement_type->human_readable_str, "Average");
+            measurement_type->is_time_based = false;
 
     }
 }
