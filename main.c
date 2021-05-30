@@ -46,7 +46,8 @@ int main(int argc, char **argv)
 {
 
     /********************************************************************Initiate connection  start *****************************************************/
-	char device[STRING_BUFF_LEN] = "/dev/usbtmc0";
+
+	char device[STRING_BUFF_LEN] = "/dev/usbtmc1"; // sometimes appears as usbtmc0. Change this line if that's the case
 	if (argc > 2 && strncmp(argv[1], "-D", 2) == 0) {
 		strcpy(device, argv[2]);
 		argc -= 2;
@@ -55,9 +56,8 @@ int main(int argc, char **argv)
 	struct connection con;// con is the handle for the connection I guess
 	con_open(&con, device);
 	if (con.fd < 0) {
-		fprintf(stderr, "Could not open device '%s': %s\n", device,
-				strerror(errno));
-		exit(1);
+		fprintf(stderr, "Could not open device '%s': %s\n", device, strerror(errno));
+		//exit(1);
 	}
 
 
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
     prompt_for_number(&sample_interval_sec);
 
     select_measurements(measurements_table, &nb_of_measurements, active_channels_table);
-    select_measurement_type(&measurement_type);
+    print_measurements(measurements_table, nb_of_measurements);
 
     printf("The program will save ");
     printf("%" PRId32,datapoints_to_acquire);
@@ -189,7 +189,7 @@ int main(int argc, char **argv)
         fprintf(fptr,",");
         for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
 
-             snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.type_scope_command_str, i);/*Query the measurement to the scope. str_measurement_type contains the meas. type as per the Rigol programming manual */
+             //snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.type_scope_command_str, i);/*Query the measurement to the scope. str_measurement_type contains the meas. type as per the Rigol programming manual */
              //printf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.type_scope_command_str, i);// For DEBUG
              con_send(&con, temp_string);
              con_recv(&con);
@@ -294,17 +294,15 @@ void generate_filename(char * filename){
 
 }
 
-void select_measurements(measurement_t* measurements_table, uint8_t* nb_of_measurements, bool* active_channels_table){
+void select_measurements(measurement_t* measurements_table, uint8_t* nb_of_measurements_ptr, bool* active_channels_table){
 
     bool selection_is_finished = false;
-    *nb_of_measurements = 0;
+    *nb_of_measurements_ptr = 0;
 
-    while (!selection_is_finished && (*nb_of_measurements <= MAX_MEASUREMENTS)){
+    while (!selection_is_finished && (*nb_of_measurements_ptr <= MAX_MEASUREMENTS)){
 
-        select_measurement_type(measurements_table, nb_of_measurements, &selection_is_finished);
-
-
-
+        select_measurement_type(&measurements_table[*nb_of_measurements_ptr], nb_of_measurements_ptr, &selection_is_finished);
+        select_measurement_channel(&measurements_table[*nb_of_measurements_ptr]);
 
     }
 
@@ -312,7 +310,7 @@ void select_measurements(measurement_t* measurements_table, uint8_t* nb_of_measu
 }
 
 
-void select_measurement_type(measurement_t* measurements_table, uint8_t* nb_of_measurements, bool* selection_is_finished){
+void select_measurement_type(measurement_t* measurement, uint8_t* nb_of_measurements, bool* selection_is_finished){
 
     uint32_t measurement_number;
     printf("Please enter the measurement type number:\n");
@@ -322,54 +320,142 @@ void select_measurement_type(measurement_t* measurements_table, uint8_t* nb_of_m
     printf("3. Pk-pk value\n");
     printf("4. Frequency\n");
     printf("5. Pos. duty cycle\n");
+    printf("6. Phase (measured on rising edge)\n");
+    printf("7. Delay (measured on rising edge)\n");
     prompt_for_number(&measurement_number);
     //printf("Selected number is %d\n", measurement_type);
 
     if (measurement_number){
 
-        *nb_of_measurements++;// One more measurement has been selected
+        (*nb_of_measurements)++;// One more measurement has been selected
         switch (measurement_number){
 
             case 1 :// If choice no. 1
-                strcpy(measurement_type->type_scope_command_str, "VAVG");// Average voltage
-                strcpy(measurement_type->human_readable_str, "Average");
-                measurement_type->is_time_based = false;
+                strcpy(measurement->type_scope_command_str, "VAVG");// Average voltage
+                strcpy(measurement->type_human_readable_str, "Average");
+                measurement->time_property = NOT_TIME_BASED;
                 break;
 
             case 2 :// If choice no. 2
-                strcpy(measurement_type->type_scope_command_str, "VRMS");// RMS voltage
-                strcpy(measurement_type->human_readable_str, "RMS");
-                measurement_type->is_time_based = false;
+                strcpy(measurement->type_scope_command_str, "VRMS");// RMS voltage
+                strcpy(measurement->type_human_readable_str, "RMS");
+                measurement->time_property = NOT_TIME_BASED;
                 break;
 
             case 3 :// If choice no. 3
-                strcpy(measurement_type->type_scope_command_str, "VPP");// Peak to peak voltage
-                strcpy(measurement_type->human_readable_str, "Pk-pk");
-                measurement_type->is_time_based = false;
+                strcpy(measurement->type_scope_command_str, "VPP");// Peak to peak voltage
+                strcpy(measurement->type_human_readable_str, "Pk-pk");
+                measurement->time_property = NOT_TIME_BASED;
                 break;
 
             case 4 :// If choice no. 4
-                strcpy(measurement_type->type_scope_command_str, "FREQ");// Frequency
-                strcpy(measurement_type->type_scope_command_str, "Frequency [Hz]");
-                measurement_type->is_time_based = true;
+                strcpy(measurement->type_scope_command_str, "FREQ");// Frequency
+                strcpy(measurement->type_human_readable_str, "frequency");
+                measurement->time_property = TIME_BASED;
+                strcpy(measurement->unit_str, "Hz");
                 break;
 
             case 5 :// If choice no. 5
-                strcpy(measurement_type->type_scope_command_str, "PDUT");// Positive duty cycle
-                strcpy(measurement_type->type_scope_command_str, "Duty cycle [D]");
-                measurement_type->is_time_based = true;
+                strcpy(measurement->type_scope_command_str, "PDUT");// Positive duty cycle
+                strcpy(measurement->type_human_readable_str, "duty cycle");
+                measurement->time_property = TIME_BASED;
+                strcpy(measurement->unit_str, "D");
+                break;
+
+            case 6 :// If choice no. 6
+                strcpy(measurement->type_scope_command_str, "RPH");// Positive duty cycle
+                strcpy(measurement->type_human_readable_str, "phase");
+                measurement->time_property = TIME_BASED_TWO_SOURCES;
+                strcpy(measurement->unit_str, "deg");
+                break;
+
+            case 7 :// If choice no. 7
+                strcpy(measurement->type_scope_command_str, "RDEL");// Positive duty cycle
+                strcpy(measurement->type_human_readable_str, "delay");
+                measurement->time_property = TIME_BASED_TWO_SOURCES;
+                strcpy(measurement->unit_str, "s");
                 break;
 
             default:
-                strcpy(measurement_type->type_scope_command_str, "VAVG");// Average voltage
-                strcpy(measurement_type->human_readable_str, "Average");
-                measurement_type->is_time_based = false;
+                strcpy(measurement->type_scope_command_str, "VAVG");// Average voltage
+                strcpy(measurement->type_human_readable_str, "Average");
+                measurement->time_property = NOT_TIME_BASED;
 
         }
+
+    }else{
+
+        *selection_is_finished = true;
     }
 
-}else{
-
-    *selection_is_finished = true;
 }
 
+void select_measurement_channel(measurement_t* measurement){
+
+    if(measurement->time_property != TIME_BASED_TWO_SOURCES){
+
+        printf("Please enter the number of the desired channel (1-4, 5 for MATH):\n");
+        prompt_channel_and_write_string(measurement->source_A_str);
+
+    }else{
+
+        printf("Please enter the number of the first channel (1-4, 5 for MATH):\n");
+        prompt_channel_and_write_string(measurement->source_A_str);
+
+        printf("Please enter the number of the second channel (1-4, 5 for MATH):\n");
+        prompt_channel_and_write_string(measurement->source_B_str);
+    }
+
+
+}
+
+void prompt_channel_and_write_string(char* channel_str){
+
+    int32_t selection = 0;
+    while ((selection < FIRST_CHANNEL) || (selection > LAST_CHANNEL)){
+        prompt_for_number(&selection);
+    }
+    switch (selection){
+
+        case 1 :// If choice no. 1
+            strcpy(channel_str, "CHAN1");
+            break;
+
+        case 2 :// If choice no. 2
+            strcpy(channel_str, "CHAN2");
+            break;
+
+        case 3 :// If choice no. 3
+            strcpy(channel_str, "CHAN3");
+            break;
+
+        case 4 :// If choice no. 4
+            strcpy(channel_str, "CHAN4");
+            break;
+
+        case 5 :// If choice no. 5 (MATH)
+            strcpy(channel_str, "MATH");
+            break;
+    }
+
+
+}
+
+
+void print_measurements(measurement_t* measurements_table, uint8_t nb_of_measurements){
+
+    uint8_t count = 0;
+    char temp_string[STRING_BUFF_LEN];
+
+    while(count < nb_of_measurements){
+        count++;
+
+        printf(temp_string, STRING_BUFF_LEN, "%s,%s,%s,%s\n", measurements_table[count].type_scope_command_str,
+               measurements_table[count].type_human_readable_str, measurements_table[count].source_A_str, measurements_table[count].source_B_str);// For DEBUG
+
+
+
+
+    }
+
+}
