@@ -220,7 +220,7 @@ int main(int argc, char **argv)
 }
 
 
-int32_t prompt_for_number(int32_t* number){
+int32_t prompt_for_number(int32_t *number){
 
 
     /*Copied from: http://sekrit.de/webdocs/c/beginners-guide-away-from-scanf.html */
@@ -273,7 +273,7 @@ int32_t prompt_for_number(int32_t* number){
     return 0;
 }
 
-void generate_filename(char * filename){
+void generate_filename(char *filename){
 
     time_t rawtime = time(NULL);
 
@@ -294,7 +294,7 @@ void generate_filename(char * filename){
 
 }
 
-void select_measurements(measurement_t* measurements_table, uint8_t* nb_of_measurements_ptr, bool* active_channels_table){
+void select_measurements(measurement_t *measurements_table, uint8_t *nb_of_measurements_ptr, bool *active_channels_table_ptr){
 
     bool selection_is_finished = false;
     *nb_of_measurements_ptr = 0;
@@ -310,7 +310,7 @@ void select_measurements(measurement_t* measurements_table, uint8_t* nb_of_measu
 }
 
 
-void select_measurement_type(measurement_t* measurement, uint8_t* nb_of_measurements, bool* selection_is_finished){
+void select_measurement_type(measurement_t *measurement, uint8_t *nb_of_measurements_ptr, bool *selection_is_finished_ptr){
 
     uint32_t measurement_number;
     printf("Please enter the measurement type number:\n");
@@ -327,7 +327,7 @@ void select_measurement_type(measurement_t* measurement, uint8_t* nb_of_measurem
 
     if (measurement_number){
 
-        (*nb_of_measurements)++;// One more measurement has been selected
+        (*nb_of_measurements_ptr)++;// One more measurement has been selected
         switch (measurement_number){
 
             case 1 :// If choice no. 1
@@ -385,12 +385,12 @@ void select_measurement_type(measurement_t* measurement, uint8_t* nb_of_measurem
 
     }else{
 
-        *selection_is_finished = true;
+        *selection_is_finished_ptr = true;
     }
 
 }
 
-void select_measurement_channel(measurement_t* measurement){
+void select_measurement_channel(measurement_t *measurement){
 
     if(measurement->time_property != TIME_BASED_TWO_SOURCES){
 
@@ -409,7 +409,7 @@ void select_measurement_channel(measurement_t* measurement){
 
 }
 
-void prompt_channel_and_write_string(char* channel_str){
+void prompt_channel_and_write_string(char *channel_str){
 
     int32_t selection = 0;
     while ((selection < FIRST_CHANNEL) || (selection > LAST_CHANNEL)){
@@ -442,18 +442,17 @@ void prompt_channel_and_write_string(char* channel_str){
 }
 
 
-void print_measurements(measurement_t* measurements_table, uint8_t nb_of_measurements){
+void print_measurements(measurement_t *measurements_table, uint8_t nb_of_measurements){
 
     uint8_t count = 0;
     char temp_string[STRING_BUFF_LEN];
 
     while(count < nb_of_measurements){
+
+
+        printf("%s,%s,%s\n", measurements_table[count].type_scope_command_str, measurements_table[count].type_human_readable_str, measurements_table[count].source_A_str);// For DEBUG
+
         count++;
-
-        printf(temp_string, STRING_BUFF_LEN, "%s,%s,%s,%s\n", measurements_table[count].type_scope_command_str,
-               measurements_table[count].type_human_readable_str, measurements_table[count].source_A_str, measurements_table[count].source_B_str);// For DEBUG
-
-
 
 
     }
