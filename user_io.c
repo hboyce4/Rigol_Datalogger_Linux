@@ -2,7 +2,7 @@
 #include "user_io.h"
 #include "main.h"
 
-void select_measurements(measurement_t *measurements_table, uint8_t *nb_of_measurements_ptr, bool *active_channels_table_ptr){
+void select_measurements(measurement_t *measurements_table, uint8_t *nb_of_measurements_ptr/*, bool *active_channels_table_ptr*/){
 
     bool selection_is_finished = false;
     *nb_of_measurements_ptr = 0;
@@ -145,6 +145,11 @@ void prompt_channel_and_write_string(char *channel_str){
 
         case 5 :// If choice no. 5 (MATH)
             strcpy(channel_str, "MATH");
+            break;
+
+        default : // Just for safety
+            printf("Something went wrong\n");
+           strcpy(channel_str, "CHAN1");
             break;
     }
 

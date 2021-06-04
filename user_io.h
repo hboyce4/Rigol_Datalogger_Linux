@@ -5,7 +5,7 @@
 #include "connection.h"
 
 
-void select_measurements(measurement_t *, uint8_t *, bool *);
+void select_measurements(measurement_t *, uint8_t */*, bool **/);
 void select_measurement_type(measurement_t *, uint8_t, bool *);
 void select_measurement_channel(measurement_t *);
 void prompt_channel_and_write_string(char *);

@@ -34,20 +34,26 @@ int main(int argc, char **argv)
 
     /********************************************************************Initiate connection  start *****************************************************/
 
-	char device[STRING_BUFF_LEN] = "/dev/usbtmc1"; // sometimes appears as usbtmc0. Change this line if that's the case
-	if (argc > 2 && strncmp(argv[1], "-D", 2) == 0) {
-		strcpy(device, argv[2]);
+	char device_A[STRING_BUFF_LEN] = "/dev/usbtmc0"; // The program will try for these two devices
+	char device_B[STRING_BUFF_LEN] = "/dev/usbtmc1"; // go have a look at the /dev/ folder to see what appears when the instrument is plugged in, then modify these lines as needed
+
+	if (argc > 2 && strncmp(argv[1], "-D", 2) == 0) {// Allows to pass requested device_A from command line I believe. NOT TESTED by me.
+		strcpy(device_A, argv[2]);
 		argc -= 2;
 		*argv += 2;
 	}
-	struct connection con;// con is the handle for the connection I guess
-	con_open(&con, device);
-	if (con.fd < 0) {
-		fprintf(stderr, "Could not open device '%s': %s\n", device, strerror(errno));
-		//exit(1);
+	struct connection con;// con is the handle for the connection I believe
+	con_open(&con, device_A);
+	if (con.fd < 0) {// If connection failure
+
+		printf("Device '%s' not found, trying '%s'\n", device_A, device_B);// this whole block is rather ugly and could be improved i think.
+		con_open(&con, device_B);
+		if (con.fd < 0){// If connection failure again
+            fprintf(stderr, "Could not open device '%s' or '%s': %s\n", device_A, device_B, strerror(errno));// Original error handler
+            exit(1);
+		}
+
 	}
-
-
 
     uint8_t i;
     char temp_string[STRING_BUFF_LEN];
@@ -63,14 +69,14 @@ int main(int argc, char **argv)
     int32_t sample_interval_sec, datapoints_to_acquire;
     measurement_t measurements_table[MAX_MEASUREMENTS]; // Maximum number of measurements is 8 (arbitrary, scope can probably take more)
     uint8_t nb_of_measurements;
-    bool active_channels_table[5]; // Scope is 4 channels + MATH
+    //bool active_channels_table[5]; // Scope is 4 channels + MATH
 
     printf("Please enter the desired number of samples:\n");
     prompt_for_number(&datapoints_to_acquire);
     printf("Please enter the desired sample interval in seconds:\n");
     prompt_for_number(&sample_interval_sec);
 
-    select_measurements(measurements_table, &nb_of_measurements, active_channels_table);
+    select_measurements(measurements_table, &nb_of_measurements/*, active_channels_table*/);
 
 
     printf("The program will save ");
@@ -80,17 +86,20 @@ int main(int argc, char **argv)
     printf(" seconds interval of these measurements:\n");
     print_measurements(measurements_table, nb_of_measurements);
 
+    printf("Make sure the relevant channels are ON and correctly setup, then press ENTER\n");
+    getchar();
     /******************************************************************** User prompt end *****************************************************/
 
 
     /******************************************************************** Scope setup start *****************************************************/
      /* Turning ON all channels and setting trigger to AUTO*/
-    for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
+    /*for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {//Not done anymore because the relevant channels will have been turned on already when
+                                                //setting them up and always having all channels on is kind of annoying
         snprintf(temp_string, STRING_BUFF_LEN, ":CHANnel%d:DISPlay 1", i);
         con_send(&con, temp_string);
     }
     con_send(&con,":TRIGger:SWEep AUTO");
-    sleep(3);    /* Wait a bit to acquire some waveforms */
+    sleep(2); */   /* Wait a bit to acquire some waveforms */
     /******************************************************************** Scope setup end *****************************************************/
 
 
