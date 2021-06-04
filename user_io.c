@@ -245,3 +245,79 @@ void generate_filename(char *filename){
     sprintf(filename,"Scope Capture %04d-%02d-%02d %02d:%02d:%02d.csv", ptm->tm_year+1900, ptm->tm_mon+1, ptm->tm_mday, ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
 
 }
+
+void write_file_header(FILE *fptr, measurement_t *measurements_table, struct connection *con, uint8_t nb_of_measurements){
+
+    char temp_string[STRING_BUFF_LEN];
+    uint8_t i;
+     /* Print a list of the channels */
+    fprintf(fptr,"time");
+    for(i = 0; i < nb_of_measurements;i++){// For every measurement
+        if(measurements_table[i].time_property == TIME_BASED_TWO_SOURCES){// If measurement has two sources
+            fprintf(fptr, ",%s-%s", measurements_table[i].source_A_str, measurements_table[i].source_B_str);// Print two sources
+        }else{
+            fprintf(fptr, ",%s",measurements_table[i].source_A_str);// else print the one source
+        }
+    }
+    fprintf(fptr,"\n");
+
+
+    /*Query and print units*/
+   fprintf(fptr,"Unix Time,");
+
+    for (i = 0;i < nb_of_measurements;i++) {// For all measurements
+
+        if(measurements_table[i].time_property == NOT_TIME_BASED){// If the measurement is not time based, query unit from scope
+
+            if(strcmp(measurements_table[i].source_A_str, "MATH")){// If the channel is not MATH
+
+                snprintf(temp_string, STRING_BUFF_LEN, ":%s:UNIT?", measurements_table[i].source_A_str);
+                con_send(con, temp_string);
+                con_recv(con);
+                fprintf(fptr,"%.*s", (strlen(con->buffer) - 1), con->buffer);
+
+            }else{// else the channel is MATH and we can't query it (the scope doesn't support it...)
+                fprintf(fptr,"unknown");
+            }
+
+        }else{// else the unit is time based, so we know the unit. Use the unit string from measurement info
+            fprintf(fptr,"%s",measurements_table[i].unit_str);
+        }
+
+        fprintf(fptr,",");// Comma to separate fields
+
+
+    }
+    fprintf(fptr,"\n");// After all measurement units, new line
+
+    /* Write measurement types*/
+    fprintf(fptr,",");// First cell is empty
+    for (i = 0;i < nb_of_measurements;i++) {// For all measurements
+
+            fprintf(fptr,"%s,",measurements_table[i].type_human_readable_str);// Read the measurement type from the measurement info struct and write it to file
+
+    }
+    fprintf(fptr,"\n");// After all measurement types are written, new line
+
+    /*Query and print probe ratios*/ // Not doing that anymore, not very useful and can be confusing later
+    /*
+    double temp_float = 0;
+    fprintf(fptr,"1X,");
+    for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
+        snprintf(temp_string, STRING_BUFF_LEN, ":CHAN%d:PROBe?", i);
+
+        con_send(con, temp_string);
+        con_recv(con);
+        sscanf((const char*)con->buffer, "%lf", &temp_float);
+        fprintf(fptr,"%gX", temp_float);
+        if (i < NUMBER_OF_CHANNELS) {
+            fprintf(fptr,",");
+        }
+
+    }
+    fprintf(fptr,"\n");
+    */
+
+    fclose(fptr);
+
+}

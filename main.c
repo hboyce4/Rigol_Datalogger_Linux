@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 
 
     /* Create the file and open it in write mode*/
-    FILE* fptr;
+    FILE *fptr;
     fptr = fopen(filename, "w");
     if (fptr == NULL) {/* If null pointer is returned by fopen because it could not open the file*/
         printf("Error! Could not open file.");
@@ -109,77 +109,8 @@ int main(int argc, char **argv)
     }
 
     printf("Writing file header...\n");
-    /************************ Need to move the file header writing to a function************************/
+    write_file_header(fptr, measurements_table, &con, nb_of_measurements);
 
-     /* Print a list of the channels */
-    fprintf(fptr,"time");
-    for(i = 0; i < nb_of_measurements;i++){// For every measurement
-        if(measurements_table[i].time_property == TIME_BASED_TWO_SOURCES){// If measurement has two sources
-            fprintf(fptr, ",%s-%s", measurements_table[i].source_A_str, measurements_table[i].source_B_str);// Print two sources
-        }else{
-            fprintf(fptr, ",%s",measurements_table[i].source_A_str);// else print the one source
-        }
-    }
-    fprintf(fptr,"\n");
-
-
-    /*Query and print units*/
-   fprintf(fptr,"Unix Time,");
-
-    for (i = 0;i < nb_of_measurements;i++) {// For all measurements
-
-        if(measurements_table[i].time_property == NOT_TIME_BASED){// If the measurement is not time based, query unit from scope
-
-            if(strcmp(measurements_table[i].source_A_str, "MATH")){// If the channel is not MATH
-
-                snprintf(temp_string, STRING_BUFF_LEN, ":%s:UNIT?", measurements_table[i].source_A_str);
-                con_send(&con, temp_string);
-                con_recv(&con);
-                fprintf(fptr,"%.*s", (strlen(con.buffer) - 1), con.buffer);
-
-            }else{// else the channel is MATH and we can't query it
-                fprintf(fptr,"unknown");
-            }
-
-        }else{// else the unit is time based, so we know the unit. Use the unit string from measurement info
-            fprintf(fptr,"%s",measurements_table[i].unit_str);
-        }
-
-        fprintf(fptr,",");// Comma to separate fields
-
-
-    }
-    fprintf(fptr,"\n");// After all measurement units, new line
-
-    /* Write measurement types*/
-    fprintf(fptr,",");// First cell is empty
-    for (i = 0;i < nb_of_measurements;i++) {// For all measurements
-
-            fprintf(fptr,"%s,",measurements_table[i].type_human_readable_str);// Read the measurement type from the measurement info struct and write it to file
-
-    }
-    fprintf(fptr,"\n");// After all measurement types are written, new line
-
-    /*Query and print probe ratios*/ // Not doing that anymore, not very useful and can be confusing later
-    /*
-    double temp_float = 0;
-    fprintf(fptr,"1X,");
-    for (i = 1; i <= NUMBER_OF_CHANNELS; i++) {
-        snprintf(temp_string, STRING_BUFF_LEN, ":CHAN%d:PROBe?", i);
-
-        con_send(&con, temp_string);
-        con_recv(&con);
-        sscanf((const char*)con.buffer, "%lf", &temp_float);
-        fprintf(fptr,"%gX", temp_float);
-        if (i < NUMBER_OF_CHANNELS) {
-            fprintf(fptr,",");
-        }
-
-    }
-    fprintf(fptr,"\n");
-    */
-
-    fclose(fptr);
     /******************************************************************** File initialization end *****************************************************/
 
 
@@ -209,7 +140,13 @@ int main(int argc, char **argv)
         for (i = 0; i < nb_of_measurements; i++) {
 
              snprintf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,%s", measurements_table[i].type_scope_command_str, measurements_table[i].source_A_str);/*Query the measurement to the scope. str_measurement_type contains the meas. type as per the Rigol programming manual */
-             /****************Need to add edge case when 2 sources************/
+
+             if(measurements_table[i].time_property == TIME_BASED_TWO_SOURCES){// If measurement needs 2 sources
+                char append_str[STRING_BUFF_LEN];
+                snprintf(append_str, STRING_BUFF_LEN, ",%s", measurements_table[i].source_B_str);// copy second source to string after a comma
+                strncat(temp_string, append_str, STRING_BUFF_LEN);// Append second source to command
+
+             }
 
              //printf(temp_string, STRING_BUFF_LEN, ":MEAS:ITEM? %s,CHAN%d", measurement_type.type_scope_command_str, i);// For DEBUG
              con_send(&con, temp_string);
