@@ -52,6 +52,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="main.h" />
+		<Unit filename="user_io.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="user_io.h" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>

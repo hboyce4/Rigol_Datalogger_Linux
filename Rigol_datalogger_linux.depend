@@ -10,7 +10,12 @@
 
 1423075376 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/connection.h
 
-1621800788 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.c
+1622780387 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.c
+	"main.h"
+	"connection.h"
+	"user_io.h"
+
+1622759650 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.h
 	<stdio.h>
 	<errno.h>
 	<fcntl.h>
@@ -20,12 +25,15 @@
 	<sys/types.h>
 	<inttypes.h>
 	<sys/stat.h>
+	<stdbool.h>
 	<time.h>
 	<readline/readline.h>
 	<readline/history.h>
-	"connection.h"
+
+1622759642 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/user_io.h
 	"main.h"
 
-1621800873 /home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/main.h
-	<stdbool.h>
+1622778064 source:/home/hboyce4/Documents/Rigol_Scope/Applications/Rigol_Datalogger_Linux/user_io.c
+	"user_io.h"
+	"main.h"
 

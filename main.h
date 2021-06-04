@@ -1,7 +1,21 @@
 #ifndef MAIN_H_INCLUDED
 #define MAIN_H_INCLUDED
 
+
+#include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <inttypes.h>
+#include <sys/stat.h>
 #include <stdbool.h>
+#include <time.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
 
 #define STRING_BUFF_LEN 512
 #define NUMBER_OF_CHANNELS 4
@@ -28,13 +42,6 @@ typedef struct {
 
 
 
-int32_t prompt_for_number(int32_t *);
-void generate_filename(char *);
-void select_measurement_type(measurement_t *, uint8_t *, bool *);
-void select_measurements(measurement_t *, uint8_t *, bool *);
-void select_measurement_channel(measurement_t *);
-void prompt_channel_and_write_string(char *);
-void print_measurements(measurement_t *, uint8_t);
 
 #endif // MAIN_H_INCLUDED
 
